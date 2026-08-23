@@ -1,0 +1,308 @@
+{
+  "headline": "Detected 96.7% of synthetically corrupted images at 0.0% false-positive rate across 36 images, mean analysis latency 5ms on CPU.",
+  "nImages": 36,
+  "nClean": 6,
+  "nCorrupted": 30,
+  "recall": 0.9667,
+  "falsePositiveRate": 0.0,
+  "perFamilyRecall": {
+    "blur": 1.0,
+    "noise": 1.0,
+    "jpeg": 1.0,
+    "clip": 0.8333,
+    "tiles": 1.0
+  },
+  "meanLatencyMs": 5.06,
+  "rows": [
+    {
+      "image": "botanical",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0,
+      "latencyMs": 7,
+      "detected": false
+    },
+    {
+      "image": "circuit",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0,
+      "latencyMs": 4,
+      "detected": false
+    },
+    {
+      "image": "fabric",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0385,
+      "latencyMs": 4,
+      "detected": false
+    },
+    {
+      "image": "street",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0,
+      "latencyMs": 5,
+      "detected": false
+    },
+    {
+      "image": "topo",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0,
+      "latencyMs": 4,
+      "detected": false
+    },
+    {
+      "image": "workshop",
+      "family": "clean",
+      "verdict": "clean",
+      "score": 0.0,
+      "latencyMs": 4,
+      "detected": false
+    },
+    {
+      "image": "botanical",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "botanical",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.5632,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "botanical",
+      "family": "jpeg",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "botanical",
+      "family": "clip",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "botanical",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "circuit",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "circuit",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.6938,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "circuit",
+      "family": "jpeg",
+      "verdict": "suspect",
+      "score": 0.3905,
+      "latencyMs": 14,
+      "detected": true
+    },
+    {
+      "image": "circuit",
+      "family": "clip",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 7,
+      "detected": true
+    },
+    {
+      "image": "circuit",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "fabric",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.9,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "fabric",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "fabric",
+      "family": "jpeg",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "fabric",
+      "family": "clip",
+      "verdict": "corrupt",
+      "score": 0.7363,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "fabric",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "street",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.9,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "street",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "street",
+      "family": "jpeg",
+      "verdict": "corrupt",
+      "score": 0.9,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "street",
+      "family": "clip",
+      "verdict": "clean",
+      "score": 0.2032,
+      "latencyMs": 4,
+      "detected": false
+    },
+    {
+      "image": "street",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "topo",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.8507,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "topo",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "topo",
+      "family": "jpeg",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "topo",
+      "family": "clip",
+      "verdict": "corrupt",
+      "score": 0.6074,
+      "latencyMs": 5,
+      "detected": true
+    },
+    {
+      "image": "topo",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "workshop",
+      "family": "blur",
+      "verdict": "corrupt",
+      "score": 0.5258,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "workshop",
+      "family": "noise",
+      "verdict": "corrupt",
+      "score": 0.6498,
+      "latencyMs": 6,
+      "detected": true
+    },
+    {
+      "image": "workshop",
+      "family": "jpeg",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "workshop",
+      "family": "clip",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 4,
+      "detected": true
+    },
+    {
+      "image": "workshop",
+      "family": "tiles",
+      "verdict": "corrupt",
+      "score": 0.45,
+      "latencyMs": 5,
+      "detected": true
+    }
+  ],
+  "generatedAt": "2026-08-23T23:07:12.578708+00:00",
+  "model": "classical-opencv"
+}

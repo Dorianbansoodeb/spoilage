@@ -1,0 +1,30 @@
+[project]
+name = "spoilage"
+version = "0.1.0"
+description = "Image integrity gate — classical CV signals for corruption detection"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.116.1",
+    "uvicorn[standard]==0.35.0",
+    "numpy==2.2.6",
+    "opencv-python-headless==4.11.0.86",
+    "python-multipart==0.0.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.1", "httpx==0.28.1"]
+
+[project.scripts]
+spoilage-bench = "spoilage.bench:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["spoilage"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

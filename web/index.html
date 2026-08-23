@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPOILAGE — Image Integrity Gate</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0c0b09;
+      --ink: #e8dfc8;
+      --muted: #8a8070;
+      --line: #2a261c;
+      --amber: #e4b44c;
+      --amber-dim: #8a6a22;
+      --clean: #7dce8a;
+      --suspect: #e4b44c;
+      --corrupt: #e25b4c;
+      --stage: #16140f;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink); }
+    body {
+      min-height: 100vh;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      background-image:
+        linear-gradient(180deg, rgba(228,180,76,0.03), transparent 28%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 3px);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 22px 28px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .brand i { font-style: italic; color: var(--amber); font-weight: 500; }
+    .sub { color: var(--muted); margin-top: 6px; letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; }
+    .latency {
+      color: var(--amber);
+      border: 1px solid var(--amber-dim);
+      padding: 8px 12px;
+      min-width: 120px;
+      text-align: right;
+    }
+    .latency b { display: block; font-size: 20px; font-family: Fraunces, serif; color: var(--ink); }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      min-height: calc(100vh - 92px);
+    }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    .stage {
+      border-right: 1px solid var(--line);
+      padding: 20px 24px 28px;
+    }
+    .stage-frame {
+      position: relative;
+      background: var(--stage);
+      border: 1px solid var(--line);
+      min-height: 380px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+    .stage-frame::before, .stage-frame::after {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px dashed #3a3426;
+      pointer-events: none;
+    }
+    .stage-frame::after {
+      inset: auto;
+      width: 18px; height: 18px;
+      border: none;
+      border-top: 1px solid var(--amber);
+      border-left: 1px solid var(--amber);
+      top: 8px; left: 8px;
+    }
+    #drop {
+      width: 100%;
+      min-height: 380px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      padding: 24px;
+    }
+    #drop.over { outline: 1px solid var(--amber); }
+    #preview-wrap {
+      display: none;
+      width: 100%;
+      padding: 20px;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    #preview-wrap.show { display: grid; }
+    #preview-wrap img {
+      width: 100%;
+      height: 280px;
+      object-fit: contain;
+      background: #000;
+      border: 1px solid #2d291f;
+    }
+    #preview-wrap label {
+      display: block;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 10px;
+      margin-bottom: 6px;
+    }
+    .hint { text-align: center; color: var(--muted); max-width: 360px; line-height: 1.6; }
+    .hint strong { color: var(--ink); display: block; font-family: Fraunces, serif; font-size: 22px; margin-bottom: 8px; }
+    input[type=file] { display: none; }
+    .rail { color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-size: 10px; }
+    .attacks { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--line); }
+    .attacks button, .samples button {
+      background: transparent;
+      color: var(--ink);
+      border: 0;
+      border-right: 1px solid var(--line);
+      font: inherit;
+      padding: 10px 12px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .attacks button:last-child { border-right: 0; }
+    .attacks button:hover, .samples button:hover { background: #1c1912; color: var(--amber); }
+    .attacks button.active { background: var(--amber); color: #111; }
+    .samples { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 0; border: 1px solid var(--line); }
+    .samples button { border-right: 1px solid var(--line); }
+    .panel { padding: 22px 24px 32px; }
+    .stamp {
+      font-family: Fraunces, serif;
+      font-size: 42px;
+      letter-spacing: 0.08em;
+      border: 3px solid var(--muted);
+      color: var(--muted);
+      display: inline-block;
+      padding: 6px 14px 10px;
+      transform: rotate(-2deg);
+      margin: 8px 0 14px;
+    }
+    .stamp.clean { color: var(--clean); border-color: var(--clean); }
+    .stamp.suspect { color: var(--suspect); border-color: var(--suspect); }
+    .stamp.corrupt { color: var(--corrupt); border-color: var(--corrupt); }
+    .scoreline { color: var(--muted); margin-bottom: 22px; }
+    .scoreline b { color: var(--ink); font-size: 18px; }
+    .meter { margin: 0 0 14px; }
+    .meter .top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+    .meter .name { letter-spacing: 0.16em; text-transform: uppercase; font-size: 11px; }
+    .meter .raw { color: var(--muted); }
+    .bar {
+      height: 8px;
+      background: #1a1813;
+      border: 1px solid #322c20;
+      position: relative;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--amber);
+    }
+    .bar.hot > span { background: var(--corrupt); }
+    .reasons {
+      margin-top: 22px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+    .reasons h2 {
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+      margin: 0 0 8px;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #c8bea4;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .err { color: var(--corrupt); margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="brand">SPOIL<i>AGE</i></div>
+      <div class="sub">Image integrity gate · film inspection bench · classical CV</div>
+    </div>
+    <div class="latency">GATE LATENCY<b id="lat">— ms</b></div>
+  </header>
+  <main>
+    <section class="stage">
+      <div class="rail"><span>Stage / emulsion</span><span id="fname">no frame loaded</span></div>
+      <div class="stage-frame">
+        <div id="drop">
+          <div class="hint">
+            <strong>Drop a frame on the gate</strong>
+            or click to pick a file. Recruiter path: load a sample, then wreck it.
+          </div>
+        </div>
+        <div id="preview-wrap">
+          <div>
+            <label>Before</label>
+            <img id="before" alt="original frame" />
+          </div>
+          <div>
+            <label>After / submitted</label>
+            <img id="after" alt="analyzed frame" />
+          </div>
+        </div>
+      </div>
+      <input id="file" type="file" accept="image/*" />
+      <div class="rail" style="margin-top:18px"><span>Corrupt this image</span><span>synthetic attack → re-analyze</span></div>
+      <div class="attacks" id="attacks">
+        <button data-attack="blur">Blur</button>
+        <button data-attack="noise">Noise</button>
+        <button data-attack="jpeg">JPEG q12</button>
+        <button data-attack="clip">Clip</button>
+        <button data-attack="tiles">Drop tiles</button>
+      </div>
+      <div class="rail" style="margin-top:16px"><span>Built-in plates</span><span>public-domain synthetics</span></div>
+      <div class="samples" id="samples"></div>
+      <div class="err" id="err"></div>
+    </section>
+    <aside class="panel">
+      <div class="rail"><span>Verdict</span><span>1.0 = corrupt</span></div>
+      <div id="stamp" class="stamp">NO FRAME</div>
+      <div class="scoreline">integrity score <b id="score">—</b></div>
+      <div id="meters"></div>
+      <div class="reasons">
+        <h2>Reasons — explain the model</h2>
+        <pre id="reasons">load a frame to emit per-signal reasons</pre>
+      </div>
+    </aside>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const SIGNALS = ["blur", "noise", "compression", "clipping", "occlusion"];
+    let originalBlob = null;
+    let currentBlob = null;
+
+    function metersSkeleton() {
+      $("meters").innerHTML = SIGNALS.map((name) => `
+        <div class="meter">
+          <div class="top">
+            <span class="name">${name}</span>
+            <span class="raw" id="raw-${name}">value — · score —</span>
+          </div>
+          <div class="bar" id="bar-${name}"><span></span></div>
+        </div>`).join("");
+    }
+    metersSkeleton();
+
+    async function boot() {
+      const res = await fetch("/catalog");
+      const data = await res.json();
+      $("samples").innerHTML = data.samples.map((name) =>
+        `<button data-sample="${name}">${name}</button>`
+      ).join("");
+    }
+    boot();
+
+    $("drop").addEventListener("click", () => $("file").click());
+    $("file").addEventListener("change", (e) => {
+      if (e.target.files[0]) ingest(e.target.files[0], e.target.files[0].name);
+    });
+    ["dragenter", "dragover"].forEach((ev) => {
+      $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); });
+    });
+    $("drop").addEventListener("dragleave", () => $("drop").classList.remove("over"));
+    $("drop").addEventListener("drop", (e) => {
+      e.preventDefault();
+      $("drop").classList.remove("over");
+      const f = e.dataTransfer.files[0];
+      if (f) ingest(f, f.name);
+    });
+
+    $("samples").addEventListener("click", async (e) => {
+      const name = e.target.dataset.sample;
+      if (!name) return;
+      const res = await fetch(`/samples/${name}.jpg`);
+      const blob = await res.blob();
+      ingest(new File([blob], `${name}.jpg`, { type: "image/jpeg" }), `${name}.jpg`);
+    });
+
+    $("attacks").addEventListener("click", async (e) => {
+      const attack = e.target.dataset.attack;
+      if (!attack || !originalBlob) return;
+      document.querySelectorAll(".attacks button").forEach((b) => b.classList.toggle("active", b === e.target));
+      const body = new FormData();
+      body.append("file", originalBlob, originalBlob.name || "frame.jpg");
+      body.append("attack", attack);
+      body.append("seed", String(Date.now() % 99991));
+      const res = await fetch("/corrupt", { method: "POST", body });
+      if (!res.ok) { $("err").textContent = await res.text(); return; }
+      const wrecked = await res.blob();
+      currentBlob = new File([wrecked], `corrupt-${attack}.jpg`, { type: "image/jpeg" });
+      showPair(originalBlob, currentBlob);
+      await analyze(currentBlob);
+    });
+
+    async function ingest(file, name) {
+      $("err").textContent = "";
+      originalBlob = file;
+      currentBlob = file;
+      $("fname").textContent = name;
+      document.querySelectorAll(".attacks button").forEach((b) => b.classList.remove("active"));
+      showPair(file, file);
+      await analyze(file);
+    }
+
+    function showPair(before, after) {
+      $("drop").style.display = "none";
+      $("preview-wrap").classList.add("show");
+      $("before").src = URL.createObjectURL(before);
+      $("after").src = URL.createObjectURL(after);
+    }
+
+    async function analyze(file) {
+      const body = new FormData();
+      body.append("file", file, file.name || "frame.jpg");
+      const t = performance.now();
+      const res = await fetch("/analyze", { method: "POST", body });
+      if (!res.ok) { $("err").textContent = await res.text(); return; }
+      const data = await res.json();
+      paint(data, Math.round(performance.now() - t));
+    }
+
+    function paint(data, roundtrip) {
+      $("stamp").textContent = data.verdict.toUpperCase();
+      $("stamp").className = "stamp " + data.verdict;
+      $("score").textContent = data.score.toFixed(3);
+      $("lat").textContent = `${data.latencyMs} ms`;
+      $("lat").title = `server ${data.latencyMs}ms · round-trip ${roundtrip}ms`;
+      for (const name of SIGNALS) {
+        const s = data.signals[name];
+        $(`raw-${name}`).textContent = `value ${formatVal(name, s.value)} · score ${s.score.toFixed(2)}`;
+        const bar = $(`bar-${name}`);
+        bar.classList.toggle("hot", s.score >= 0.65);
+        bar.firstElementChild.style.width = `${Math.round(s.score * 100)}%`;
+      }
+      $("reasons").textContent = data.reasons.map((r) => "> " + r).join("\n");
+    }
+
+    function formatVal(name, v) {
+      if (name === "clipping" || name === "occlusion") return (v * 100).toFixed(1) + "%";
+      if (name === "compression") return v.toFixed(2);
+      return v.toFixed(1);
+    }
+  </script>
+</body>
+</html>
