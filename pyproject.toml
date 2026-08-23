@@ -1,7 +1,7 @@
 [project]
 name = "spoilage"
 version = "0.1.0"
-description = "Image integrity gate — classical CV signals for corruption detection"
+description = "Integrity research stack — vision corruption gate + LLM behavioral spoilage evals"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -17,6 +17,7 @@ dev = ["pytest==8.4.1", "httpx==0.28.1"]
 
 [project.scripts]
 spoilage-bench = "spoilage.bench:main"
+spoilage-behavior = "spoilage.behavior.bench:main"
 
 [build-system]
 requires = ["setuptools>=68"]

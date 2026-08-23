@@ -112,7 +112,27 @@ ATTACK_LABELS = {
 }
 
 
-def apply_attack(image: np.ndarray, name: str, seed: int = 0) -> np.ndarray:
+def apply_attack(image: np.ndarray, name: str, seed: int = 0, **kwargs) -> np.ndarray:
     if name not in ATTACKS:
         raise KeyError(f"unknown attack '{name}'. choose from {sorted(ATTACKS)}")
-    return ATTACKS[name](image, seed)
+    return ATTACKS[name](image, seed, **kwargs)
+
+
+# Severity grid used only for training — the public bench still uses defaults.
+TRAIN_SEVERITIES: dict[str, list[dict]] = {
+    "blur": [{"radius": r} for r in (3.5, 6.0, 8.5, 12.0)],
+    "noise": [{"sigma": s} for s in (14.0, 22.0, 28.0, 38.0)],
+    "jpeg": [{"quality": q} for q in (8, 14, 22, 34)],
+    "clip": [
+        {"lo": 92.0, "hi": 172.0},
+        {"lo": 80.0, "hi": 158.0},
+        {"lo": 68.0, "hi": 142.0},
+        {"lo": 55.0, "hi": 128.0},
+    ],
+    "tiles": [
+        {"n": 2, "size_frac": 0.16},
+        {"n": 3, "size_frac": 0.20},
+        {"n": 4, "size_frac": 0.24},
+        {"n": 5, "size_frac": 0.30},
+    ],
+}

@@ -20,6 +20,23 @@
       --corrupt: #e25b4c;
       --stage: #16140f;
     }
+    .tabs { display: flex; gap: 0; border: 1px solid var(--line); }
+    .tabs button {
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-right: 1px solid var(--line);
+      font: inherit;
+      padding: 8px 14px;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .tabs button:last-child { border-right: 0; }
+    .tabs button.active { color: var(--ink); background: #1c1912; }
+    .mode { display: none; }
+    .mode.show { display: grid; }
     * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--bg); color: var(--ink); }
     body {
@@ -203,11 +220,17 @@
   <header>
     <div>
       <div class="brand">SPOIL<i>AGE</i></div>
-      <div class="sub">Image integrity gate · film inspection bench · classical CV</div>
+      <div class="sub">Learned vision gate · TinyCNN + signal MLP · classical reasons</div>
     </div>
-    <div class="latency">GATE LATENCY<b id="lat">— ms</b></div>
+    <div style="display:flex;align-items:flex-end;gap:16px">
+      <div class="tabs" id="tabs">
+        <button data-mode="vision" class="active">Vision</button>
+        <button data-mode="language">Language</button>
+      </div>
+      <div class="latency">GATE LATENCY<b id="lat">— ms</b></div>
+    </div>
   </header>
-  <main>
+  <main id="vision" class="mode show">
     <section class="stage">
       <div class="rail"><span>Stage / emulsion</span><span id="fname">no frame loaded</span></div>
       <div class="stage-frame">
@@ -244,7 +267,8 @@
     <aside class="panel">
       <div class="rail"><span>Verdict</span><span>1.0 = corrupt</span></div>
       <div id="stamp" class="stamp">NO FRAME</div>
-      <div class="scoreline">integrity score <b id="score">—</b></div>
+      <div class="scoreline">p(corrupt) <b id="score">—</b> · family <b id="family">—</b></div>
+      <div class="scoreline" id="baseline">classical baseline —</div>
       <div id="meters"></div>
       <div class="reasons">
         <h2>Reasons — explain the model</h2>
@@ -252,11 +276,47 @@
       </div>
     </aside>
   </main>
+  <main id="language" class="mode">
+    <section class="stage">
+      <div class="rail"><span>Probe / transcript</span><span id="probe-meta">no probe</span></div>
+      <div class="stage-frame" style="display:block;padding:18px;min-height:380px">
+        <div class="rail"><span>System</span><span>policy + optional hidden note</span></div>
+        <pre id="sys-view" style="margin:0 0 14px;max-height:120px;overflow:auto">pick a holdout probe</pre>
+        <div class="rail"><span>User</span><span>the pressure</span></div>
+        <pre id="user-view" style="margin:0 0 14px">—</pre>
+        <div class="rail"><span>Completion</span><span id="backend-lbl">organism-a</span></div>
+        <pre id="comp-view">run the probe to see whether behavior spoils</pre>
+      </div>
+      <div class="rail" style="margin-top:18px"><span>Holdout probes</span><span>train probes are hidden from the demo</span></div>
+      <div class="samples" id="probe-list"></div>
+      <div class="attacks" style="margin-top:10px">
+        <button id="btn-clean">Clean context</button>
+        <button id="btn-spoil">Contaminate</button>
+        <button id="btn-run">Run gate</button>
+      </div>
+      <div class="err" id="lang-err"></div>
+    </section>
+    <aside class="panel">
+      <div class="rail"><span>Verdict</span><span>1.0 = spoiled</span></div>
+      <div id="lang-stamp" class="stamp">NO TRACE</div>
+      <div class="scoreline">p(spoil) <b id="lang-score">—</b> · family <b id="lang-family">—</b></div>
+      <div class="scoreline" id="lang-baseline">classical baseline —</div>
+      <div id="lang-meters"></div>
+      <div class="reasons">
+        <h2>Reasons — explain the model</h2>
+        <pre id="lang-reasons">run a probe to emit per-signal reasons</pre>
+      </div>
+    </aside>
+  </main>
   <script>
     const $ = (id) => document.getElementById(id);
     const SIGNALS = ["blur", "noise", "compression", "clipping", "occlusion"];
+    const LANG_SIGNALS = ["sycophancy", "hierarchy", "trigger_echo", "inconsistency", "ungrounded"];
     let originalBlob = null;
     let currentBlob = null;
+    let probes = [];
+    let activeProbe = null;
+    let contaminate = false;
 
     function metersSkeleton() {
       $("meters").innerHTML = SIGNALS.map((name) => `
@@ -270,14 +330,95 @@
     }
     metersSkeleton();
 
+    function langMeters() {
+      $("lang-meters").innerHTML = LANG_SIGNALS.map((name) => `
+        <div class="meter">
+          <div class="top">
+            <span class="name">${name}</span>
+            <span class="raw" id="lraw-${name}">value — · score —</span>
+          </div>
+          <div class="bar" id="lbar-${name}"><span></span></div>
+        </div>`).join("");
+    }
+    langMeters();
+
     async function boot() {
       const res = await fetch("/catalog");
       const data = await res.json();
       $("samples").innerHTML = data.samples.map((name) =>
         `<button data-sample="${name}">${name}</button>`
       ).join("");
+      const probeRes = await fetch("/behavior/probes");
+      const probeData = await probeRes.json();
+      probes = probeData.probes.filter((p) => p.split === "holdout");
+      $("probe-list").innerHTML = probes.map((p) =>
+        `<button data-probe="${p.id}">${p.id}</button>`
+      ).join("");
     }
     boot();
+
+    $("tabs").addEventListener("click", (e) => {
+      const mode = e.target.dataset.mode;
+      if (!mode) return;
+      document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b === e.target));
+      $("vision").classList.toggle("show", mode === "vision");
+      $("language").classList.toggle("show", mode === "language");
+    });
+
+    $("probe-list").addEventListener("click", (e) => {
+      const id = e.target.dataset.probe;
+      if (!id) return;
+      document.querySelectorAll("#probe-list button").forEach((b) => b.classList.toggle("active", b.dataset.probe === id));
+      activeProbe = probes.find((p) => p.id === id);
+      $("probe-meta").textContent = `${activeProbe.family} · ${activeProbe.split}`;
+      $("sys-view").textContent = activeProbe.system + (activeProbe.facts.length ? "\n\nFacts:\n- " + activeProbe.facts.join("\n- ") : "");
+      $("user-view").textContent = activeProbe.user;
+    });
+
+    $("btn-clean").addEventListener("click", () => {
+      contaminate = false;
+      $("btn-clean").classList.add("active");
+      $("btn-spoil").classList.remove("active");
+    });
+    $("btn-spoil").addEventListener("click", () => {
+      contaminate = true;
+      $("btn-spoil").classList.add("active");
+      $("btn-clean").classList.remove("active");
+    });
+    $("btn-run").addEventListener("click", runLanguage);
+
+    async function runLanguage() {
+      $("lang-err").textContent = "";
+      if (!activeProbe) { $("lang-err").textContent = "pick a holdout probe"; return; }
+      const res = await fetch("/behavior/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ probeId: activeProbe.id, contaminate, backend: "organism-a" }),
+      });
+      if (!res.ok) { $("lang-err").textContent = await res.text(); return; }
+      const data = await res.json();
+      $("sys-view").textContent = data.system;
+      $("user-view").textContent = data.user;
+      $("comp-view").textContent = data.completion + (data.completionB ? "\n\n— paraphrase —\n" + data.completionB : "");
+      $("backend-lbl").textContent = data.backend;
+      $("lang-stamp").textContent = data.verdict.toUpperCase();
+      $("lang-stamp").className = "stamp " + data.verdict;
+      $("lang-score").textContent = data.score.toFixed(3);
+      $("lang-family").textContent = data.family;
+      if (data.baseline) {
+        $("lang-baseline").textContent =
+          `classical baseline ${data.baseline.verdict} (${data.baseline.score.toFixed(3)})`;
+      }
+      $("lat").textContent = `${data.latencyMs} ms`;
+      for (const name of LANG_SIGNALS) {
+        const s = data.signals[name];
+        $(`lraw-${name}`).textContent = `value ${s.value.toFixed(2)} · score ${s.score.toFixed(2)}`;
+        const bar = $(`lbar-${name}`);
+        bar.classList.toggle("hot", s.score >= 0.65);
+        bar.firstElementChild.style.width = `${Math.round(s.score * 100)}%`;
+      }
+      $("lang-reasons").textContent = data.reasons.map((r) => "> " + r).join("\n");
+    }
 
     $("drop").addEventListener("click", () => $("file").click());
     $("file").addEventListener("change", (e) => {
@@ -349,6 +490,11 @@
       $("stamp").textContent = data.verdict.toUpperCase();
       $("stamp").className = "stamp " + data.verdict;
       $("score").textContent = data.score.toFixed(3);
+      $("family").textContent = (data.model && data.model.family) ? data.model.family : "—";
+      if (data.baseline) {
+        $("baseline").textContent =
+          `classical baseline ${data.baseline.verdict} (${data.baseline.score.toFixed(3)})`;
+      }
       $("lat").textContent = `${data.latencyMs} ms`;
       $("lat").title = `server ${data.latencyMs}ms · round-trip ${roundtrip}ms`;
       for (const name of SIGNALS) {

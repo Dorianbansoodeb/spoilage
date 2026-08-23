@@ -63,3 +63,13 @@ CORRUPT_CUTOFF = 0.42
 REASON_SCORE_MIN = 0.15
 
 HISTORY_N = 24
+
+# --- learned gate ---
+# 128² keeps CPU inference well under 100ms. The six committed /samples plates
+# are NEVER used for training — they are the grouped holdout.
+MODEL_INPUT = 128
+FAMILIES = ("clean", "blur", "noise", "jpeg", "clip", "tiles")
+FAMILY_TO_IDX = {name: i for i, name in enumerate(FAMILIES)}
+ML_SUSPECT = 0.35
+ML_CORRUPT = 0.55
+WEIGHTS_NAME = "gate.pt"

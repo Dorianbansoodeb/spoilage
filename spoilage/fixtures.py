@@ -143,6 +143,86 @@ def _botanical(h: int, w: int, rng: np.random.Generator) -> np.ndarray:
     return img
 
 
+def make_train_plate(seed: int, h: int = 256, w: int = 320) -> np.ndarray:
+    """Procedural plate used ONLY for training/val. Never the six demo builders."""
+    rng = np.random.default_rng(seed)
+    ys = np.linspace(0, 1, h)[:, None]
+    xs = np.linspace(0, 1, w)[None, :]
+    kind = int(seed % 8)
+    img = np.zeros((h, w, 3), dtype=np.uint8)
+    if kind == 0:  # diagonal marble
+        field = np.sin(10 * np.pi * (xs + 0.4 * ys) + seed * 0.1)
+        field += 0.4 * np.cos(7 * np.pi * ys)
+        n = (field - field.min()) / (field.max() - field.min() + 1e-8)
+        img[:, :, 0] = (50 + 90 * n).astype(np.uint8)
+        img[:, :, 1] = (70 + 70 * (1 - n)).astype(np.uint8)
+        img[:, :, 2] = (40 + 110 * n).astype(np.uint8)
+    elif kind == 1:  # brick
+        img[:] = (48, 62, 140)
+        for y in range(0, h, 18):
+            offset = 12 if (y // 18) % 2 else 0
+            cv2.line(img, (0, y), (w, y), (28, 32, 40), 2)
+            for x in range(offset, w, 28):
+                cv2.line(img, (x, y), (x, min(h, y + 18)), (28, 32, 40), 2)
+    elif kind == 2:  # ripples
+        cx, cy = 0.3 + 0.4 * (seed % 5) / 5, 0.4
+        r = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2)
+        n = 0.5 + 0.5 * np.sin(28 * np.pi * r)
+        img[:, :, 0] = (40 + 80 * n).astype(np.uint8)
+        img[:, :, 1] = (90 + 60 * n).astype(np.uint8)
+        img[:, :, 2] = (100 + 70 * (1 - n)).astype(np.uint8)
+    elif kind == 3:  # color blocks + dots
+        img[:] = (70, 90, 60)
+        for _ in range(14):
+            x = int(rng.integers(0, w - 40))
+            y = int(rng.integers(0, h - 40))
+            color = tuple(int(c) for c in rng.integers(40, 200, 3))
+            cv2.rectangle(img, (x, y), (x + 36, y + 28), color, -1)
+        for _ in range(40):
+            cv2.circle(
+                img,
+                (int(rng.integers(4, w - 4)), int(rng.integers(4, h - 4))),
+                3,
+                tuple(int(c) for c in rng.integers(30, 220, 3)),
+                -1,
+            )
+    elif kind == 4:  # herringbone
+        yy, xx = np.indices((h, w))
+        weave = ((xx + yy) // 6) % 2
+        img[:, :, 0] = 50 + 40 * weave
+        img[:, :, 1] = 80 + 30 * weave
+        img[:, :, 2] = 120 + 50 * weave
+        cv2.ellipse(img, (w // 2, h // 2), (70, 40), 20, 0, 360, (40, 40, 180), -1)
+    elif kind == 5:  # plasma
+        field = np.sin(5 * np.pi * xs + seed) * np.cos(4 * np.pi * ys)
+        field += 0.5 * np.sin(11 * np.pi * (xs * ys + 0.2))
+        n = (field - field.min()) / (field.max() - field.min() + 1e-8)
+        img[:, :, 0] = (30 + 140 * n).astype(np.uint8)
+        img[:, :, 1] = (40 + 100 * (1 - n)).astype(np.uint8)
+        img[:, :, 2] = (80 + 90 * n).astype(np.uint8)
+    elif kind == 6:  # stars on gradient
+        g = 40 + 140 * ys
+        img[:, :, 0] = g
+        img[:, :, 1] = 30 + 80 * xs
+        img[:, :, 2] = 90 + 70 * (1 - ys)
+        for _ in range(55):
+            cv2.circle(
+                img,
+                (int(rng.integers(2, w - 2)), int(rng.integers(2, h - 2))),
+                int(rng.integers(1, 4)),
+                (220, 210, 180),
+                -1,
+            )
+    else:  # scribbles
+        img[:] = (55, 70, 85)
+        for _ in range(18):
+            p1 = (int(rng.integers(0, w)), int(rng.integers(0, h)))
+            p2 = (int(rng.integers(0, w)), int(rng.integers(0, h)))
+            color = tuple(int(c) for c in rng.integers(40, 210, 3))
+            cv2.line(img, p1, p2, color, int(rng.integers(2, 5)))
+    return _grain(img, rng, sigma=2.8)
+
+
 SAMPLE_BUILDERS = {
     "workshop": _wood,
     "circuit": _circuit,

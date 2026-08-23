@@ -1,3 +1,3 @@
-"""Spoilage — classical computer-vision image integrity gate."""
+"""Spoilage — integrity research stack for vision inputs and LLM behavior."""
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"

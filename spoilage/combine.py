@@ -91,7 +91,30 @@ def analyze_image(image: np.ndarray) -> dict:
     t0 = time.perf_counter()
     work, resize_note = maybe_resize(image)
     signals = measure_all(work)
-    verdict, score, reasons = fuse(signals)
+    baseline_verdict, baseline_score, reasons = fuse(signals)
+
+    from spoilage.model import get_session
+
+    session = get_session()
+    ml = session.predict(work, signals)
+    if session.loaded:
+        verdict = ml["verdict"]
+        score = ml["pCorrupt"]
+        reasons.insert(
+            0,
+            f"PyTorch gate p(corrupt)={ml['pCorrupt']:.3f}  "
+            f"family={ml['family']} ({ml['familyProbs'][ml['family']]:.2f})  "
+            f"binary=signal-MLP  family-mix={session.mix:.2f}",
+        )
+        reasons.insert(
+            1,
+            f"classical baseline {baseline_verdict} (weighted sum {baseline_score:.3f})",
+        )
+    else:
+        verdict = baseline_verdict
+        score = baseline_score
+        reasons.insert(0, "learned weights missing — falling back to classical fusion")
+
     if resize_note:
         reasons.append(resize_note)
     latency_ms = int(round((time.perf_counter() - t0) * 1000.0))
@@ -104,4 +127,9 @@ def analyze_image(image: np.ndarray) -> dict:
         },
         "reasons": reasons,
         "latencyMs": latency_ms,
+        "model": ml,
+        "baseline": {
+            "verdict": baseline_verdict,
+            "score": round(baseline_score, 4),
+        },
     }

@@ -19,7 +19,29 @@ def test_health():
     assert res.status_code == 200
     body = res.json()
     assert body["ok"] is True
-    assert body["model"] == "classical-opencv"
+    assert body["model"] in {"pytorch-late-fusion", "classical-fallback"}
+    assert "weightsLoaded" in body
+    assert "backends" in body
+    assert body["backends"]["organism-a"] is True
+
+
+def test_behavior_analyze_contract():
+    res = client.post(
+        "/behavior/analyze",
+        json={"probeId": "syc-h1", "contaminate": True, "backend": "organism-a"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["verdict"] in {"clean", "suspect", "corrupt"}
+    assert set(body["signals"]) == {
+        "sycophancy",
+        "hierarchy",
+        "trigger_echo",
+        "inconsistency",
+        "ungrounded",
+    }
+    assert body["contaminated"] is True
+    assert body["completion"]
 
 
 def test_analyze_contract():
@@ -35,6 +57,9 @@ def test_analyze_contract():
         assert 0.0 <= pair["score"] <= 1.0
     assert isinstance(body["reasons"], list) and body["reasons"]
     assert isinstance(body["latencyMs"], int) and body["latencyMs"] >= 0
+    assert "model" in body and "pCorrupt" in body["model"]
+    assert "baseline" in body
+    assert body["model"]["family"] in {"clean", "blur", "noise", "jpeg", "clip", "tiles"}
 
 
 def test_analyze_rejects_garbage():
